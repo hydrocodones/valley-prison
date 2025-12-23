@@ -1,0 +1,72 @@
+-- valley prison infinite stamina
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- wait for player load
+repeat wait() until LocalPlayer and LocalPlayer.ServerVariables and LocalPlayer.ServerVariables:FindFirstChild("Sprint")
+
+local Sprint = LocalPlayer.ServerVariables.Sprint
+
+print("sprint folder found")
+
+
+spawn(function()
+    while true do
+        wait(0.1)
+        
+        
+        local MaxStamina = Sprint:FindFirstChild("MaxStamina")
+        local Stamina = Sprint:FindFirstChild("Stamina")
+        
+        if MaxStamina and Stamina then
+            -- Set both values to 2,000,000
+            pcall(function()
+                if MaxStamina:IsA("IntValue") or MaxStamina:IsA("NumberValue") then
+                    MaxStamina.Value = 2000000
+                end
+            end)
+            
+            pcall(function()
+                if Stamina:IsA("IntValue") or Stamina:IsA("NumberValue") then
+                    Stamina.Value = 2000000
+                end
+            end)
+        else
+            -- Also try direct property access
+            pcall(function()
+                if Sprint.MaxStamina then
+                    if typeof(Sprint.MaxStamina) == "number" then
+                        Sprint.MaxStamina = 2000000
+                    elseif typeof(Sprint.MaxStamina) == "Instance" then
+                        Sprint.MaxStamina.Value = 2000000
+                    end
+                end
+            end)
+            
+            pcall(function()
+                if Sprint.Stamina then
+                    if typeof(Sprint.Stamina) == "number" then
+                        Sprint.Stamina = 2000000
+                    elseif typeof(Sprint.Stamina) == "Instance" then
+                        Sprint.Stamina.Value = 2000000
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+
+Sprint.ChildAdded:Connect(function(child)
+    if child.Name == "MaxStamina" or child.Name == "Stamina" then
+        wait(0.1)
+        pcall(function()
+            if child:IsA("IntValue") or child:IsA("NumberValue") then
+                child.Value = 2000000
+                print("Found", child.Name, "- set to high value")
+            end
+        end)
+    end
+end)
+
+print("inf stamina")

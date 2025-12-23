@@ -1,0 +1,147 @@
+-- Enhanced AC Bypass Script
+-- Combines multiple bypass methods including advanced techniques
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local LogService = game:GetService("LogService")
+
+-- Method 1: Disable LogService output (prevents AC from logging detections)
+if LogService and LogService.MessageOut then
+    for _, conn in pairs(getconnections and getconnections(LogService.MessageOut) or {}) do
+        pcall(function()
+            conn:Disable()
+        end)
+    end
+    print("LogService output disabled")
+end
+
+-- Wait for GetAC to exist
+repeat wait() until ReplicatedStorage:FindFirstChild("GetAC")
+
+local GetAC = ReplicatedStorage.GetAC
+
+print("GetAC found:", GetAC)
+print("GetAC type:", GetAC.ClassName)
+
+-- Method 2: Hook GetAC RemoteFunction and Kick using __namecall
+if GetAC.ClassName == "RemoteFunction" then
+    local oldNamecall
+    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+        local method = getnamecallmethod()
+        local args = {...}
+        
+        -- Block GetAC calls
+        if self == GetAC and (method == "InvokeServer" or method == "Invoke") then
+            print("GetAC call intercepted - blocking")
+            return nil -- Return nil to block the call
+        end
+        
+        -- Block Kick calls (prevents crashes/kicks)
+        if method == "Kick" and self == LocalPlayer then
+            local reason = tostring(args[1] or ""):lower()
+            if reason:find("ammo") or reason:find("cheat") or 
+               reason:find("exploit") or reason:find("detect") or
+               reason:find("stamina") then
+                print("Kick attempt blocked:", args[1])
+                return nil -- Block the kick
+            end
+        end
+        
+        return oldNamecall(self, ...)
+    end)
+    
+    print("Method 2: Namecall hook installed (GetAC + Kick protection)")
+end
+
+-- Method 3: Try to find and hook GETACINFO service (advanced method)
+if filtergc then
+    local Service = filtergc("table", {
+        Keys = {"GETACINFO"}
+    }, true)
+    
+    if Service and Service.GETACINFO then
+        if Service.GETACINFO.OnClientInvoke then
+            Service.GETACINFO.OnClientInvoke = function()
+                return true
+            end
+            print("Method 3: GETACINFO service hooked")
+        end
+    end
+end
+
+-- Method 4: Patch detection strings in functions (prevents AC from detecting certain patterns)
+if getgc and islclosure and debug and debug.getconstants and debug.setconstant then
+    spawn(function()
+        wait(1) -- Wait a bit for AC to load
+        
+        for _, v in pairs(getgc()) do
+            if type(v) == "function" and islclosure(v) then
+                local success, consts = pcall(function()
+                    return debug.getconstants(v)
+                end)
+                
+                if success and consts then
+                    -- Patch detection strings
+                    if table.find(consts, "PSTAND") or table.find(consts, "NOCLIP") or 
+                       table.find(consts, "Luraph Script:") or table.find(consts, "BAVEL") then
+                        for i, c in pairs(consts) do
+                            if c == "PSTAND" or c == "BGYR" or c == "BVEL" or 
+                               c == "NOCLIP" or c == "HBIN" or c == "ANIM" or 
+                               c == "BAVEL" or c == "Luraph Script:" then
+                                pcall(function()
+                                    debug.setconstant(v, i, "")
+                                end)
+                            end
+                        end
+                    end
+                    
+                    -- Patch crash messages
+                    if table.find(consts, "goodbye cringelord") or 
+                       table.find(consts, "got you!!! teehee!!") then
+                        local success2, upvals = pcall(function()
+                            return debug.getupvalues(v)
+                        end)
+                        if success2 and upvals then
+                            for i, u in pairs(upvals) do
+                                if u == true then
+                                    pcall(function()
+                                        debug.setupvalue(v, i, false)
+                                    end)
+                                end
+                            end
+                        end
+                    end
+                    
+                    -- Hook functions with crash value (100000)
+                    if table.find(consts, 100000) then
+                        if hookfunction then
+                            pcall(function()
+                                hookfunction(v, function() end)
+                            end)
+                        end
+                    end
+                end
+            end
+        end
+        
+        print("Method 4: Detection strings patched")
+    end)
+end
+
+-- Method 5: Hook error/kick functions to prevent crashes
+local oldError = error
+error = function(msg, level)
+    local msgStr = tostring(msg):lower()
+    if msgStr:find("ammo") or msgStr:find("detect") or 
+       msgStr:find("cheat") or msgStr:find("exploit") then
+        print("Crash attempt blocked:", msg)
+        return -- Block the crash
+    end
+    return oldError(msg, level)
+end
+
+-- Kick protection is handled in Method 2 via __namecall hook
+print("Method 5: Kick protection active (via namecall hook)")
+
+print("Enhanced AC Bypass initialized - All protection methods active")

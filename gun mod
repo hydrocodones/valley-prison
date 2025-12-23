@@ -1,0 +1,98 @@
+-- Gun Mod Script - Modifies all guns in backpack
+-- Sets RPM to 0, RecoilMin/Max to (0,0,0), Accuracy to (0,0,0), and MaximumRange to high value
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Wait for player and backpack to load
+repeat wait() until LocalPlayer and LocalPlayer:FindFirstChild("Backpack")
+
+local Backpack = LocalPlayer.Backpack
+
+-- Function to modify a gun's configuration
+local function modifyGun(gun)
+    if not gun then return end
+    
+    -- Skip Shiv (it's a knife, not a gun)
+    if gun.Name == "Shiv" then return end
+    
+    local LocalConfig = gun:FindFirstChild("LocalConfig")
+    if not LocalConfig then return end
+    
+    local Configuration = LocalConfig:FindFirstChild("Configuration")
+    if not Configuration then return end
+    
+    -- Modify RPM (set to 0)
+    local RPM = Configuration:FindFirstChild("RPM")
+    if RPM then
+        if RPM:IsA("IntValue") or RPM:IsA("NumberValue") then
+            RPM.Value = 0
+        end
+    end
+    
+    -- Modify RecoilMin (set to Vector3(0, 0, 0))
+    local RecoilMin = Configuration:FindFirstChild("RecoilMin")
+    if RecoilMin then
+        if RecoilMin:IsA("Vector3Value") then
+            RecoilMin.Value = Vector3.new(0, 0, 0)
+        end
+    end
+    
+    -- Modify RecoilMax (set to Vector3(0, 0, 0))
+    local RecoilMax = Configuration:FindFirstChild("RecoilMax")
+    if RecoilMax then
+        if RecoilMax:IsA("Vector3Value") then
+            RecoilMax.Value = Vector3.new(0, 0, 0)
+        end
+    end
+    
+    -- Modify Accuracy (set to Vector3(0, 0, 0))
+    local Accuracy = Configuration:FindFirstChild("Accuracy")
+    if Accuracy then
+        if Accuracy:IsA("Vector3Value") then
+            Accuracy.Value = Vector3.new(0, 0, 0)
+        end
+    end
+    
+    -- Modify MaximumRange (set to high value)
+    local MaximumRange = Configuration:FindFirstChild("MaximumRange")
+    if MaximumRange then
+        if MaximumRange:IsA("IntValue") or MaximumRange:IsA("NumberValue") then
+            MaximumRange.Value = 999999
+        end
+    end
+    
+    print("Modified gun:", gun.Name)
+end
+
+-- Function to modify all guns in backpack
+local function modifyAllGuns()
+    for _, gun in pairs(Backpack:GetChildren()) do
+        if gun:IsA("Tool") then
+            modifyGun(gun)
+        end
+    end
+end
+
+-- Monitor for new guns added to backpack
+Backpack.ChildAdded:Connect(function(gun)
+    if gun:IsA("Tool") and gun.Name ~= "Shiv" then
+        wait(0.1) -- Wait a bit for LocalConfig to load
+        modifyGun(gun)
+    end
+end)
+
+-- Continuously maintain the modifications
+spawn(function()
+    while true do
+        wait(0.5) -- Check every 0.5 seconds
+        modifyAllGuns()
+    end
+end)
+
+-- Initial modification
+wait(1)
+modifyAllGuns()
+
+print("Gun mod active - RPM=0, RecoilMin/Max=(0,0,0), Accuracy=(0,0,0), MaximumRange=999999 for all guns")
+
